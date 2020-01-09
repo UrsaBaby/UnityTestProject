@@ -6,9 +6,9 @@ using UnityEngine;
 public class MovementLogic : MonoBehaviour
 {
 
-    public Vector3 playerInput;
+    public Vector3 objectInput;
     public Vector3 lastPlayerInput;
-    public Vector3 playerInputForce;
+    public Vector3 inputForce;
     public Vector3 vectorSpeed;
     public float currentSpeed;
     public float currentYSpeed;
@@ -18,8 +18,8 @@ public class MovementLogic : MonoBehaviour
     public float animationSpeed;
     private Rigidbody moveBody;
 
-    public float currentAcceleration = 0.0f;
-    public float accelerationCoefficient = 0.4f;
+    public float objectCurrentAcceleration = 0.0f;
+    public float objectAccelerationCoefficient = 0.4f;
     public bool isGrounded;
     private bool hasJumped;
     public int jumpsAvailable = 2;
@@ -49,10 +49,10 @@ public class MovementLogic : MonoBehaviour
     {
         currentRotation = this.transform.rotation;
         newRotation = Quaternion.LookRotation(this.transform.position - Camera.main.transform.position, Vector3.up);
-    newRotationInV3 = newRotation.eulerAngles;
-    newRotationInV3.x = 0;
-    newRotationInV3.z = 0;
-    newRotation = Quaternion.Euler(newRotationInV3);
+        newRotationInV3 = newRotation.eulerAngles;
+        newRotationInV3.x = 0;
+        newRotationInV3.z = 0;
+        newRotation = Quaternion.Euler(newRotationInV3);
         this.transform.rotation = newRotation;
 
 
@@ -60,38 +60,40 @@ public class MovementLogic : MonoBehaviour
     private void movement()
     {
         vectorSpeed = moveBody.velocity;
-        getPlayerInput();
-        calculateAcceleration();
-        yMovement();
+
+        objectInput = getPlayerInput();
+        objectCurrentAcceleration = calculateAcceleration(objectCurrentAcceleration, objectAccelerationCoefficient);
+        yMovement(); //refactor this
         resetJumpsAvailableIfGrounded();
-        //Calculate rotation for inputforce
-        calculateRotationDirectionForPlayerInputForce();
-        calculatePlayerInputForce();
-        setCurrentSpeed();
-        normalizePlayerInputForce();
-        addForceToRigidBody(playerInputForce);
+       // calculateRotationDirectionForPlayerInputForce();
+        inputForce = calculateInputForce(objectInput, objectCurrentAcceleration);
+        currentSpeed  = setHighestDirectionalSpeedAsCurrentSpeed(moveBody.velocity.x, moveBody.velocity.z);
+        inputForce = stopAddingToForceAtThisVelocity(inputForce, maxSpeed, moveBody);
+        addForceToRigidBody(inputForce, moveBody);
 
     }
 
     private void calculateRotationDirectionForPlayerInputForce()
     {
-        
+
     }
 
-    private void normalizePlayerInputForce()
+    private Vector3 stopAddingToForceAtThisVelocity(Vector3 thisForce, float thisVelocity, Rigidbody thisBody)
     {
-        if (Mathf.Abs(vectorSpeed.x) > maxSpeed)
+        Vector3 returnForce = new Vector3(thisForce.x,thisForce.y,thisForce.z);
+        if (Mathf.Abs(thisBody.velocity.x) > thisVelocity)
         {
-            playerInputForce.x = 0;
+            returnForce.x = 0;
         }
-        if (Mathf.Abs(vectorSpeed.z) > maxSpeed)
+        if (Mathf.Abs(thisBody.velocity.z) > thisVelocity)
         {
-            playerInputForce.z = 0;
+            returnForce.z = 0;
         }
+        return returnForce;
     }
-    public void addForceToRigidBody(Vector3 forceToAdd)
+    public void addForceToRigidBody(Vector3 forceToAdd, Rigidbody thisBody)
     {
-        moveBody.AddForce(forceToAdd);
+        thisBody.AddForce(forceToAdd);
 
     }
 
@@ -102,7 +104,7 @@ public class MovementLogic : MonoBehaviour
         {
             if (Input.GetButtonDown("Jump"))
             {
-                playerInput.y = jumpsAvailable * jumpPower + 50;
+                objectInput.y = jumpsAvailable * jumpPower + 50;
                 hasJumped = true;
             }
             else
@@ -126,11 +128,11 @@ public class MovementLogic : MonoBehaviour
     private Vector3 getPlayerInput()
     {
 
-        playerInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-        return playerInput;
+        objectInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+        return objectInput;
     }
 
-    private void calculateAcceleration()
+    private float calculateAcceleration(float thisAcceleration, float byThisAccelerationCoeffcient)
     {
         if (isPlayerInputCreatingMovement())
         {
@@ -141,24 +143,49 @@ public class MovementLogic : MonoBehaviour
             }
             if (currentSpeed < maxSpeed * 0.8)
             {
-                increaseAcceleration(accelerationCoefficient);
+                return increaseAcceleration(thisAcceleration, byThisAccelerationCoeffcient);
+            }
+            else
+            {
+                return thisAcceleration;
             }
         }
         else
         {
-            decreaseAccelerationToZero();
+            return decreaseAccelerationToZero(thisAcceleration, objectAccelerationCoefficient);
         }
+       
     }
-
-    private void calculatePlayerInputForce()
+    public float increaseAcceleration(float thisAcceleration, float acceleration)
     {
-        if (isMovementKeysDown())
+        return thisAcceleration += acceleration;
+    }
+    private float decreaseAccelerationToZero(float thisAcceleration, float deaccelerationCoefficient)
+    {
+        if (thisAcceleration > 0) //if were not presing any butten and have acceleration, decrease it.
         {
-            playerInputForce = new Vector3(playerInput.x * currentAcceleration, playerInput.y, playerInput.z * currentAcceleration);
+            return thisAcceleration -= objectAccelerationCoefficient * 2;
+        }
+        else if (thisAcceleration < 0.1) //if were almost still, stand still.
+        {
+            return thisAcceleration = 0f;
         }
         else
         {
-            playerInputForce = new Vector3(playerInput.x, playerInput.y, playerInput.z);
+            return 0f;
+        }
+
+    }
+
+    private Vector3 calculateInputForce(Vector3 byThisInput, float byThisAcceleration)
+    {
+        if (isMovementKeysDown())
+        {
+            return new Vector3(byThisInput.x * byThisAcceleration, byThisInput.y, byThisInput.z * byThisAcceleration);
+        }
+        else
+        {
+            return new Vector3(byThisInput.x, byThisInput.y, byThisInput.z);
         }
     }
 
@@ -172,26 +199,27 @@ public class MovementLogic : MonoBehaviour
         return returnBool;
     }
 
-    private void setCurrentSpeed()
+    private float setHighestDirectionalSpeedAsCurrentSpeed(float xDirectionalSpeed, float zDirectionalSpeed
+    )
     {
-        if (Mathf.Abs(vectorSpeed.x) > Mathf.Abs(vectorSpeed.z))
+        if (Mathf.Abs(xDirectionalSpeed) > Mathf.Abs(zDirectionalSpeed))
         {
-            currentSpeed = Mathf.Abs(vectorSpeed.x);
+            return Mathf.Abs(xDirectionalSpeed);
         }
         else
         {
-            currentSpeed = Mathf.Abs(vectorSpeed.z);
+            return Mathf.Abs(zDirectionalSpeed);
         }
     }
 
     private float calculateChangeInDirection()
     {
-        return Vector3.Dot(playerInput.normalized, lastPlayerInput.normalized);
+        return Vector3.Dot(objectInput.normalized, lastPlayerInput.normalized);
     }
 
     private bool hasDirectionalInputChanged()
     {
-        if (playerInput != lastPlayerInput)
+        if (objectInput != lastPlayerInput)
         {
             return true;
         }
@@ -202,7 +230,7 @@ public class MovementLogic : MonoBehaviour
     {
         if (hasDirectionalInputChanged())
         {
-            lastPlayerInput = playerInput;
+            lastPlayerInput = objectInput;
         }
     }
 
@@ -210,34 +238,21 @@ public class MovementLogic : MonoBehaviour
     {
         if (changeInDirection < 0) //if directions changes 180 reduce acceleeration to 0
         {
-            currentAcceleration = 10f;
+            objectCurrentAcceleration = 10f;
         }
         if (changeInDirection <= 0.75)
         { //if directions changes slightly ex north to northwest, reduce acceleration slightly
-            currentAcceleration = currentAcceleration * 0.75f;
+            objectCurrentAcceleration = objectCurrentAcceleration * 0.75f;
         }
     }
 
-    private void decreaseAccelerationToZero()
-    {
-        if (currentAcceleration > 0) //if were not presing any butten and have acceleration, decrease it.
-        {
-            currentAcceleration -= accelerationCoefficient * 2;
-        }
-        if (currentAcceleration < 0.1) //if were almost still, stand still.
-        {
-            currentAcceleration = 0f;
-        }
-    }
 
-    public void increaseAcceleration(float acceleration)
-    {
-        currentAcceleration += acceleration;
-    }
+
+
 
     public bool isPlayerInputCreatingMovement()
     {
-        if (Mathf.Abs(playerInput.x) > 0 || Mathf.Abs(playerInput.z) > 0)
+        if (Mathf.Abs(objectInput.x) > 0 || Mathf.Abs(objectInput.z) > 0)
         {
             return true;
         }

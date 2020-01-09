@@ -314,17 +314,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 136038007161b9a47b145bdd4ea6d348, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerInput: {x: 0, y: 0, z: 0}
+  objectInput: {x: 0, y: 0, z: 0}
   lastPlayerInput: {x: 0, y: 0, z: 0}
-  playerInputForce: {x: 0, y: 0, z: 0}
+  inputForce: {x: 0, y: 0, z: 0}
   vectorSpeed: {x: 0, y: 0, z: 0}
   currentSpeed: 0
   currentYSpeed: 0
   maxSpeed: 6
   jumpPower: 100
   animationSpeed: 0
-  currentAcceleration: 0
-  accelerationCoefficient: 0.4
+  objectCurrentAcceleration: 0
+  objectAccelerationCoefficient: 0.4
   isGrounded: 0
   jumpsAvailable: 2
 --- !u!114 &671366106

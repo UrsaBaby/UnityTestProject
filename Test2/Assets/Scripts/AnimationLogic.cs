@@ -66,7 +66,7 @@ public class AnimationLogic : MonoBehaviour
     }
 
     private bool isPlayerInputingXAndZMovement(){
-        if(Mathf.Abs(objectMovementLogic.playerInput.x) > 0.0f   || Mathf.Abs(objectMovementLogic.playerInput.z) > 0.0f){
+        if(Mathf.Abs(objectMovementLogic.objectInput.x) > 0.0f   || Mathf.Abs(objectMovementLogic.objectInput.z) > 0.0f){
             return true;
         }
         return false;
