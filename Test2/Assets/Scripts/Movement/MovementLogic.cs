@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -63,11 +64,18 @@ public class MovementLogic : MonoBehaviour
         calculateAcceleration();
         yMovement();
         resetJumpsAvailableIfGrounded();
+        //Calculate rotation for inputforce
+        calculateRotationDirectionForPlayerInputForce();
         calculatePlayerInputForce();
         setCurrentSpeed();
         normalizePlayerInputForce();
         addForceToRigidBody(playerInputForce);
 
+    }
+
+    private void calculateRotationDirectionForPlayerInputForce()
+    {
+        
     }
 
     private void normalizePlayerInputForce()
@@ -115,11 +123,11 @@ public class MovementLogic : MonoBehaviour
 
     }
 
-    private void getPlayerInput()
+    private Vector3 getPlayerInput()
     {
 
         playerInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-
+        return playerInput;
     }
 
     private void calculateAcceleration()

@@ -8,6 +8,7 @@ TagManager:
   - Fire
   - Ground
   - Navigator
+  - CameraHolder
   layers:
   - Default
   - TransparentFX

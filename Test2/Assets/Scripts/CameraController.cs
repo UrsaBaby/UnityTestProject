@@ -10,11 +10,14 @@ public class CameraController : MonoBehaviour
     private float AngleX = 0;
     private float AngleZ = 0;
     GameObject[] playerCharacter;
+    GameObject[] cameraHolder;
  
     // Start is called before the first frame update
     void Start()
     {
-        directionFromCameraToObject = Camera.main.transform.position - this.transform.position;
+        cameraHolder =  GameObject.FindGameObjectsWithTag("CameraHolder");
+        playerCharacter =  GameObject.FindGameObjectsWithTag("Player");
+        directionFromCameraToObject = cameraHolder[0].transform.position - this.transform.position;
     }
 
     // Update is called once per frame
@@ -29,15 +32,15 @@ public class CameraController : MonoBehaviour
 
     private void setCameraPosition()
     {
-        playerCharacter =  GameObject.FindGameObjectsWithTag("Player");
+        
         this.transform.position = playerCharacter[0].transform.position;
-        Camera.main.transform.position = this.transform.position + this.transform.rotation * directionFromCameraToObject;
+        cameraHolder[0].transform.position = this.transform.position + this.transform.rotation * directionFromCameraToObject;
     }
 
     private void setCameraRotation()
     {
         
-        Camera.main.transform.rotation = Quaternion.LookRotation( this.transform.position-Camera.main.transform.position ,Vector3.up); // directionFromObjectToCamera in first vector
+        cameraHolder[0].transform.rotation = Quaternion.LookRotation( this.transform.position-cameraHolder[0].transform.position ,Vector3.up); // directionFromObjectToCamera in first vector
     }
 
  
