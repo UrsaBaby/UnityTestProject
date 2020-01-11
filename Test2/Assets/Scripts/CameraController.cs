@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    private Vector3 formerMousePosition;
+
     private Vector3 directionFromCameraToObject;
     private Vector3 directionFromObjectToCamera;
     private float AngleX = 0;
@@ -13,6 +13,7 @@ public class CameraController : MonoBehaviour
     GameObject[] cameraHolder;
     GameObject[] navigator;
     Vector3[] cameraDirections;
+    private Vector3 currentDistanceAndDirection;
 
     // Start is called before the first frame update
     void Start()
@@ -21,60 +22,55 @@ public class CameraController : MonoBehaviour
         playerCharacter = GameObject.FindGameObjectsWithTag("Player");
         navigator = GameObject.FindGameObjectsWithTag("Navigator");
         //cameraDirections[0] = new Vector3(1f,3f,0f);
-        directionFromCameraToObject = cameraHolder[0].transform.position - this.transform.position;
+
+        directionFromCameraToObject = cameraHolder[0].transform.position - navigator[0].transform.position;
     }
 
     // Update is called once per frame
     void Update()
     {
-        followThisObjectWithARotatableNavigatorAndCameraAtThisDistance(playerCharacter[0], navigator[0], cameraHolder[0], directionFromCameraToObject);
+        followThisObjectWithARotatableNavigatorAndCameraFromThisDirection(playerCharacter[0], navigator[0], cameraHolder[0], directionFromCameraToObject);
     }
 
-    private void followThisObjectWithARotatableNavigatorAndCameraAtThisDistance(GameObject objectToFollow, GameObject thisNavigator, GameObject thisCamera, Vector3 thisDirection)
+    private void followThisObjectWithARotatableNavigatorAndCameraFromThisDirection(GameObject PlayerControlled, GameObject thisNavigator, GameObject thisCameraHolder, Vector3 directionFromCameraToObject)
     {
-        setObjectAtThisOtherObject(thisNavigator, objectToFollow);
-        setObjectPositionByThisOtherObjectAtThisDistanceAndDirection(thisCamera, thisNavigator, thisDirection); //refactor this
-        rotateGameObject(thisNavigator);
-        setCameraRotation(thisCamera, thisNavigator);
-    }
-
-
-    private void setObjectAtThisOtherObject(GameObject thisGameObject, GameObject atThisOtherGameObject)
-    {
-        thisGameObject.transform.position = atThisOtherGameObject.transform.position;
-        Debug.Log(thisGameObject.transform.position);
-    }
-
-    private void setObjectPositionByThisOtherObjectAtThisDistanceAndDirection(GameObject thisObject, GameObject atThisOtherObject, Vector3 thisDirection)
-    {
-
-        thisObject.transform.position = atThisOtherObject.transform.position + atThisOtherObject.transform.rotation * thisDirection; //the difference in these two positions in thisDirection
-    }
-
-    private void setCameraRotation(GameObject objectToRotate, GameObject aroundThisObject)
-    {
-
-        objectToRotate.transform.rotation = Quaternion.LookRotation(aroundThisObject.transform.position - objectToRotate.transform.position, Vector3.up); // directionFromObjectToCamera in first vector
+        setObjectAtThisOtherObject(thisNavigator, PlayerControlled);
+        currentDistanceAndDirection = getCurrentDistanceBetweenTwoObjectsInThisDirection(thisCameraHolder, thisNavigator, directionFromCameraToObject);
+        thisCameraHolder.transform.position = currentDistanceAndDirection; //makes camera follow character
+        rotateGameObjectWithMouse(thisNavigator);
+        rotateObjectAroundThisObject(thisCameraHolder, thisNavigator);
     }
 
 
 
-    private void rotateGameObject(GameObject objectToRotate)
+    private void setObjectAtThisOtherObject(GameObject thisNavigator, GameObject playerControlled)
     {
-        Quaternion currentObjectRotation = objectToRotate.transform.rotation;
-        AngleX += (formerMousePosition.x - Input.mousePosition.x); //Degrees to change X over Y axis based on mouse movement since last frame;
-        AngleZ += (formerMousePosition.y - Input.mousePosition.y); //degrees too change Z over X axis
+        thisNavigator.transform.position = playerControlled.transform.position;
+
+    }
+
+    private Vector3 getCurrentDistanceBetweenTwoObjectsInThisDirection(GameObject thisCameraHolder, GameObject thisNavigator, Vector3 directionFromCameraToObject)
+    {
+        return thisNavigator.transform.position + thisNavigator.transform.rotation * directionFromCameraToObject; //the difference in these two positions in thisDirection
+    }
+
+    private void rotateObjectAroundThisObject(GameObject thisCameraHolder, GameObject thisNavigator)
+    {
+        thisCameraHolder.transform.rotation = Quaternion.LookRotation(thisNavigator.transform.position - thisCameraHolder.transform.position, Vector3.up); // directionFromObjectToCamera in first vector
+    }
 
 
+
+    private void rotateGameObjectWithMouse(GameObject thisNavigator)
+    {
+        Quaternion currentObjectRotation = thisNavigator.transform.rotation;
+
+        AngleX += Input.GetAxis("Mouse X");
+        AngleZ += Input.GetAxis("Mouse Y");
 
         Vector3 AxisY = new Vector3(0, 1, 0);
         Vector3 AxisX = new Vector3(1, 0, 0);
 
-
-
-        objectToRotate.transform.rotation = Quaternion.AngleAxis(AngleX / 4, AxisY) * Quaternion.AngleAxis(-AngleZ / 4, AxisX); //4 is mouse sensitivity,
-
-
-        formerMousePosition = Input.mousePosition;
+        thisNavigator.transform.rotation = Quaternion.AngleAxis(AngleX, AxisY) * Quaternion.AngleAxis(-AngleZ+90, AxisX); //rotate this much over this axis. +90 over x axis to make it start horizontally.
     }
 }
