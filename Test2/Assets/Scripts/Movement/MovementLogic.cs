@@ -54,25 +54,33 @@ public class MovementLogic : MonoBehaviour
         newRotationInV3.z = 0;
         newRotation = Quaternion.Euler(newRotationInV3);
         this.transform.rotation = newRotation;
-
-
     }
     private void movement()
     {
         vectorSpeed = moveBody.velocity;
 
         objectInput = getPlayerInput();
+        objectInput = rotateThisInputByThisRotation(objectInput, this.transform.rotation); //TODO!
         objectCurrentAcceleration = calculateAcceleration(objectCurrentAcceleration, objectAccelerationCoefficient);
         yMovement(); //refactor this
         resetJumpsAvailableIfGrounded();
-       // calculateRotationDirectionForPlayerInputForce();
-        inputForce = calculateInputForce(objectInput, objectCurrentAcceleration);
+       
+        inputForce = calculateInputForceInThisDirection(objectInput, objectCurrentAcceleration, this.transform.rotation );
         currentSpeed  = setHighestDirectionalSpeedAsCurrentSpeed(moveBody.velocity.x, moveBody.velocity.z);
         inputForce = stopAddingToForceAtThisVelocity(inputForce, maxSpeed, moveBody);
         addForceToRigidBody(inputForce, moveBody);
 
     }
 
+    private Vector3 rotateThisInputByThisRotation(Vector3 playerInput, Quaternion playerRotation){
+
+        float angle;
+        Vector3 axis = Vector3.zero;
+        playerRotation.ToAngleAxis(out angle, out axis);
+        playerInput = Quaternion.AngleAxis(angle, Vector3.up) * playerInput;
+
+        return playerInput;
+    }
     private void calculateRotationDirectionForPlayerInputForce()
     {
 
@@ -177,7 +185,7 @@ public class MovementLogic : MonoBehaviour
 
     }
 
-    private Vector3 calculateInputForce(Vector3 byThisInput, float byThisAcceleration)
+    private Vector3 calculateInputForceInThisDirection(Vector3 byThisInput, float byThisAcceleration, Quaternion directions)
     {
         if (isMovementKeysDown())
         {
